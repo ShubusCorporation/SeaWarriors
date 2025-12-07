@@ -1,0 +1,37 @@
+{
+    "name": "Sea Warrior level 2a",
+    "description": "Sea Warrior level 2a",
+    "image": "ipfs://QmeankgJmy5v3pQAyodWooG77Dp6bsihAfrsWSMvr2spJM",
+    "attributes":
+    [
+        {
+            "trait_type": "attack",
+            "trait_value": "6"
+        },
+        {
+            "trait_type": "defence",
+            "trait_value": "7"
+        },
+        {
+            "trait_type": "damage",
+            "trait_value": "2-5"
+        },
+        {
+            "trait_type": "health",
+            "trait_value": "18"
+        },
+        {
+            "trait_type": "speed",
+            "trait_value": "5"
+        },
+        {
+            "trait_type": "growth",
+            "trait_value": "8"
+        },
+
+        {
+            "trait_type": "price",
+            "trait_value": "150"
+        }
+    ]
+}
