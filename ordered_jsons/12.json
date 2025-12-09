@@ -1,12 +1,12 @@
 {
-    "name": "Sea Warrior level 1",
-    "description": "Sea Warrior level 1",
-    "image": "ipfs://QmNR3wysHFrPZS9yh9naTSpf4gNA4PvVjgSaQ3HfBpF5aD",
+    "name": "Sea Warrior level 7",
+    "description": "Sea Warrior level 7",
+    "image": "ipfs://QmQtUnzSCGFVqjK55yRBnbgDGSRvPoXaHwuxP8HEfd7vP2",
     "attributes":
     [
         {
             "trait_type": "level",
-            "trait_value": "1"
+            "trait_value": "7"
         },
         {
             "trait_type": "modification",
@@ -14,32 +14,35 @@
         },
         {
             "trait_type": "attack",
-            "trait_value": "4"
+            "trait_value": "19"
         },
         {
             "trait_type": "defence",
-            "trait_value": "3"
+            "trait_value": "17"
         },
         {
             "trait_type": "damage",
-            "trait_value": "1-3"
+            "trait_value": "35-50"
         },
         {
             "trait_type": "health",
-            "trait_value": "7"
+            "trait_value": "180"
         },
         {
             "trait_type": "speed",
-            "trait_value": "6"
+            "trait_value": "9"
         },
         {
             "trait_type": "growth",
-            "trait_value": "14"
+            "trait_value": "1"
         },
-
         {
             "trait_type": "price",
-            "trait_value": "80"
+            "trait_value": "2400"
+        },
+        {
+            "trait_type": "price_gem",
+            "trait_value": "1"
         }
     ]
 }
