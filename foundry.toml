@@ -7,5 +7,10 @@ remappings = [
     "@openzeppelin/=.deps/npm/@openzeppelin/",
 ]
 
+constant_overrides.DebugConfig.DEBUG = "false"
+
+[profile.test]
+constant_overrides.DebugConfig.DEBUG = "true"
+
 
 # See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options
