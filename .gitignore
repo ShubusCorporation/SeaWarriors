@@ -20,7 +20,6 @@ artifacts/
 # symlink for Slither
 out/
 out
-.deps/
 .states/
 lib/forge-std
 lib/openzeppelin-contracts
