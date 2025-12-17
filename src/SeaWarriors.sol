@@ -9,13 +9,12 @@ import {ERC721URIStorage} from "@openzeppelin/contracts/token/ERC721/extensions/
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/ReentrancyGuard.sol";
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
-//import { DEBUG } from "./DebugConfig.sol";
+import {console} from "forge-std/console.sol";
 
 contract SeaWarriors is ERC721, ERC721URIStorage, ERC721Pausable, Ownable, ERC721Burnable, ReentrancyGuard {
     using Strings for uint256;
 
     event Purchase(address indexed buyer, uint256 tokenId, uint256 metadataId);
-    //event NumeratorReady(uint256 numerator, uint256 coeff, uint256 avg, uint256 currentPayment);
 
     error InsufficientFunds();
     error ZeroBalance();
@@ -28,7 +27,7 @@ contract SeaWarriors is ERC721, ERC721URIStorage, ERC721Pausable, Ownable, ERC72
     uint256 private _totalSales;
     uint256 private _seed;
 
-    // Gas efficiency: constant variables do not occupy a storage slot, as their values are embedded directly in the byteco
+    // Gas efficiency: constant variables do not occupy a storage slot, as their values are embedded directly in the bytecode
     uint256 private constant TOTAL_PICTURES = 13;
     uint256 private constant MIN_NUMERATOR = 10;
     uint256 private constant MAX_NUMERATOR = 1000;
@@ -45,6 +44,7 @@ contract SeaWarriors is ERC721, ERC721URIStorage, ERC721Pausable, Ownable, ERC72
         ));
     }
 
+    // forge-lint: disable-next-line(mixed-case-function):
     function _baseURI() internal pure override returns (string memory) {
         return "ipfs://Qmf2UPHvAqCXk2kMgPquSacNQWdckpHRGKRikevdbK6SG9/";
     }
@@ -82,8 +82,12 @@ contract SeaWarriors is ERC721, ERC721URIStorage, ERC721Pausable, Ownable, ERC72
     {
         require(msg.value >= 0.0001 ether, InsufficientFunds());
         uint256 tokenId = _nextTokenId++;
-        uint256 metadataId = getMetadataId(msg.value);
-        require(!_hasItem[msg.sender][metadataId], AlreadyOwns(metadataId));
+        uint256 metadataId = getMetadataId(msg.value, _totalPayments, _totalSales);
+        uint256 originalId = metadataId;
+
+        while (_hasItem[msg.sender][metadataId]) {
+            if (--metadataId == 0) revert AlreadyOwns(originalId);
+        }
         require(metadataId > 0 && metadataId <= TOTAL_PICTURES, WrongMetadataId(metadataId));
 
         unchecked {
@@ -112,13 +116,24 @@ contract SeaWarriors is ERC721, ERC721URIStorage, ERC721Pausable, Ownable, ERC72
     // transaction cost	101237 gas 
     // execution cost	80173 gas 
 
-    function getMetadataId(uint256 currentPayment) private view returns(uint256) {
+    function getMetadataId(
+        uint256 currentPayment,
+        uint256 totalPayments,
+        uint256 totalSales
+    ) 
+    internal
+    view
+    returns(uint256) 
+    {
         uint256 numerator = 90;
         uint256 denominator = 100;
 
-        if (_totalSales > 0) {
-            numerator = getNumerator(currentPayment, numerator);
+        if (totalSales > 0) {
+            numerator = getNumerator(currentPayment,  totalPayments / totalSales, numerator);
         }
+        console.log("== Implementation ==");
+        console.log("numerator = ", numerator);
+
         uint256 initial = 1250;
         uint256 curr = initial;
         uint256 summ;
@@ -127,9 +142,13 @@ contract SeaWarriors is ERC721, ERC721URIStorage, ERC721Pausable, Ownable, ERC72
             unchecked {
                 curr = curr * numerator / denominator;
                 summ += curr;
+                console.log(i + 1, "): ", curr);
             }
         }
         uint256 random = getRandom(summ);
+        console.log("random: ", random, " summ: ", summ);
+        console.log("====");
+
         curr = initial;
         summ = 0;
 
@@ -145,31 +164,48 @@ contract SeaWarriors is ERC721, ERC721URIStorage, ERC721Pausable, Ownable, ERC72
         return 1;
     }
 
-    function getNumerator(uint256 currentPayment, uint256 numerator) private view returns(uint256) {
-        uint256 avg = _totalPayments / _totalSales;
-        bool isBonus = currentPayment > avg;
-        uint256 rem;
-
-        if (isBonus) {
-            rem = currentPayment - avg;
+    function getNumerator(
+        uint256 currentPayment,
+        uint256 averagePayment,
+        uint256 numerator
+    ) internal 
+      view
+      virtual
+      returns(uint256)
+    {
+        if (currentPayment == 0) {
+            return MIN_NUMERATOR;
         }
-        else {
-            rem = avg - currentPayment;
-        }
-        uint256 avg5p = avg / 20;
-
-        if (avg5p == 0 || rem < avg5p) {
+        if (averagePayment == 0) {
             return numerator;
         }
-        uint256 coeff = rem * 5 / avg5p;
+        bool isBonus = currentPayment > averagePayment;
+        uint256 rawCoeff;
 
         if (isBonus) {
-            numerator += coeff;
-            if (numerator > MAX_NUMERATOR) numerator = MAX_NUMERATOR;
+            rawCoeff = averagePayment * 100 / currentPayment;
+
+            if (rawCoeff == 0) {
+                return MAX_NUMERATOR;
+            }
+            uint256 coeff = 100 / rawCoeff;
+
+            if (coeff == 1) numerator += (100 - rawCoeff);
+               else numerator *= coeff;
+            
+            if (numerator > MAX_NUMERATOR) 
+                numerator = MAX_NUMERATOR;
         }
         else {
+            rawCoeff = currentPayment * 100 / averagePayment;
+
+            if (rawCoeff == 0) {
+                return MIN_NUMERATOR;
+            }
+            uint256 coeff = 100 - rawCoeff;
+
             if (numerator > coeff) numerator -= coeff;
-            else numerator = MIN_NUMERATOR;
+                else numerator = MIN_NUMERATOR;
         }
         return numerator;
     }
@@ -196,7 +232,7 @@ contract SeaWarriors is ERC721, ERC721URIStorage, ERC721Pausable, Ownable, ERC72
     }
 
     // The following functions are overrides required by Solidity.
-
+    // forge-lint: disable-next-line(mixed-case-function):
     function _setTokenURI(uint256 tokenId, string memory metadataId) 
         internal 
         override(ERC721URIStorage) 
