@@ -7,7 +7,7 @@ import {ERC721Burnable} from "@openzeppelin/contracts/token/ERC721/extensions/ER
 import {ERC721Pausable} from "@openzeppelin/contracts/token/ERC721/extensions/ERC721Pausable.sol";
 import {ERC721URIStorage} from "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
-import {ReentrancyGuard} from "@openzeppelin/contracts/ReentrancyGuard.sol";
+import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 import {console} from "forge-std/console.sol";
 
@@ -17,10 +17,17 @@ contract SeaWarriors is ERC721, ERC721URIStorage, ERC721Pausable, Ownable, ERC72
     event Purchase(address indexed buyer, uint256 tokenId, uint256 metadataId);
 
     error InsufficientFunds();
-    error ZeroBalance();
+    error InsufficientFundsToBuyNew(address buyer, uint256 funds);
+    error NotEnoughBalance();
     error WrongMetadataId(uint256 id);
-    error AlreadyOwns(uint256 metadataId);
+    error AlreadyOwns(address buyer, uint256 metadataId);
+    error AlreadyCompleted(address buyer);
     error WithdrawFailed(uint256 amount);
+    error WithdrawToArtistFailed(address artist, uint256 amount);
+    error ArtistShouldBeEOA();
+    error OwnerShouldNotBeArtist();
+
+    address public _artist;
 
     uint256 private _nextTokenId;
     uint256 private _totalPayments;
@@ -28,12 +35,14 @@ contract SeaWarriors is ERC721, ERC721URIStorage, ERC721Pausable, Ownable, ERC72
     uint256 private _seed;
 
     // Gas efficiency: constant variables do not occupy a storage slot, as their values are embedded directly in the bytecode
-    uint256 private constant TOTAL_PICTURES = 13;
+    uint256 public constant TOTAL_PICTURES = 13;
     uint256 private constant MIN_NUMERATOR = 10;
     uint256 private constant MAX_NUMERATOR = 1000;
+    uint256 private constant INITIAL_NUMERATOR = 50;
 
-    mapping(address => mapping(uint256 => bool)) internal _hasItem;
-    mapping(uint256 => uint256) internal _metadataOf; // tokenId --> metadataId
+    mapping(address => mapping(uint256 => bool)) internal _hasItem; // buyer -> metadataId -> has
+    mapping(uint256 => uint256) internal _metadataOf; // tokenId -> metadataId
+    mapping(address => uint256) internal _itemsPurchased; // buyer -> how many items
 
     constructor(address initialOwner)
         ERC721("Sea Warriors", "ABYSSWARS")
@@ -62,7 +71,7 @@ contract SeaWarriors is ERC721, ERC721URIStorage, ERC721Pausable, Ownable, ERC72
         onlyOwner
         returns (uint256)
     {
-        require(!_hasItem[to][metadataId], AlreadyOwns(metadataId));
+        require(!_hasItem[to][metadataId], AlreadyOwns(to, metadataId));
         require(metadataId > 0 && metadataId <= TOTAL_PICTURES, WrongMetadataId(metadataId));
 
         uint256 tokenId = _nextTokenId++;
@@ -73,6 +82,12 @@ contract SeaWarriors is ERC721, ERC721URIStorage, ERC721Pausable, Ownable, ERC72
         return tokenId;
     }
 
+    function setArtist(address artist) public onlyOwner {
+        require(artist.code.length == 0, ArtistShouldBeEOA());
+        require(artist != owner(), OwnerShouldNotBeArtist());
+        _artist = artist;
+    }
+
     function buy() 
         public
         payable
@@ -80,16 +95,19 @@ contract SeaWarriors is ERC721, ERC721URIStorage, ERC721Pausable, Ownable, ERC72
         nonReentrant
         returns(uint256)
     {
+        require(_itemsPurchased[msg.sender] < TOTAL_PICTURES, AlreadyCompleted(msg.sender));
         require(msg.value >= 0.0001 ether, InsufficientFunds());
         uint256 tokenId = _nextTokenId++;
         uint256 metadataId = getMetadataId(msg.value, _totalPayments, _totalSales);
-        uint256 originalId = metadataId;
-
-        while (_hasItem[msg.sender][metadataId]) {
-            if (--metadataId == 0) revert AlreadyOwns(originalId);
-        }
+        console.log("original metadataId = ", metadataId);
         require(metadataId > 0 && metadataId <= TOTAL_PICTURES, WrongMetadataId(metadataId));
 
+        while (_hasItem[msg.sender][metadataId]) {
+            if (--metadataId == 0) {
+                revert InsufficientFundsToBuyNew(msg.sender, msg.value);
+            }
+        }
+        console.log("Applied metadataId = ", metadataId);
         unchecked {
             _totalPayments += msg.value;
             _totalSales++;
@@ -125,7 +143,7 @@ contract SeaWarriors is ERC721, ERC721URIStorage, ERC721Pausable, Ownable, ERC72
     view
     returns(uint256) 
     {
-        uint256 numerator = 90;
+        uint256 numerator = INITIAL_NUMERATOR;
         uint256 denominator = 100;
 
         if (totalSales > 0) {
@@ -226,9 +244,22 @@ contract SeaWarriors is ERC721, ERC721URIStorage, ERC721Pausable, Ownable, ERC72
 
     function withdraw() public onlyOwner {
         uint256 balance = address(this).balance;
-        require(balance > 0, ZeroBalance());
-        (bool success, ) = owner().call{value: balance}("");
-        require(success, WithdrawFailed(balance));
+        require(balance > 1, NotEnoughBalance());
+        address ownerAddr = owner();
+        bool successOwner;
+
+        if (_artist == address(0)) {
+            (successOwner,) = ownerAddr.call{value: balance}("");
+        }
+        else {
+            unchecked {
+                balance /= 2;
+            }
+            (successOwner,) = ownerAddr.call{value: balance}("");
+            (bool successArtist, ) = _artist.call{value: balance}("");
+            require(successArtist, WithdrawToArtistFailed(_artist, balance));
+        }
+        require(successOwner, WithdrawFailed(balance));
     }
 
     // The following functions are overrides required by Solidity.
@@ -254,9 +285,11 @@ contract SeaWarriors is ERC721, ERC721URIStorage, ERC721Pausable, Ownable, ERC72
         }
         if (to != address(0)) { // transfer || mint
             _hasItem[to][metadataId] = true;
+            _itemsPurchased[to]++;
         }
         else { // burn
             delete _metadataOf[tokenId];
+            _itemsPurchased[from]--;
         }
     }
 
@@ -276,5 +309,29 @@ contract SeaWarriors is ERC721, ERC721URIStorage, ERC721Pausable, Ownable, ERC72
         returns (bool)
     {
         return super.supportsInterface(interfaceId);
+    }
+}
+
+contract TestSeaWarriors is SeaWarriors {
+    constructor(address initialOwner) SeaWarriors(initialOwner) {}
+
+    function getMetadataOf(uint256 tokenId) public view returns (uint256) {
+        return _metadataOf[tokenId];
+    }
+
+    function getHasItem(address holder, uint256 item) public view returns (bool) {
+        return _hasItem[holder][item];
+    }
+
+    function getItemsPurchased(address by) public view returns (uint256) {
+        return _itemsPurchased[by];
+    }
+
+    function callGetNumerator(
+        uint256 currentPayment,
+        uint256 averagePayment,
+        uint256 numerator
+    ) public view returns (uint256) {
+        return super.getNumerator(currentPayment, averagePayment, numerator);
     }
 }

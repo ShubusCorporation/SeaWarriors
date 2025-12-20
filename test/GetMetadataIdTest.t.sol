@@ -5,12 +5,10 @@ import {Test} from "forge-std/Test.sol";
 import {console} from "forge-std/console.sol";
 import {TestMockedSeaWarriors as TestSeaWarriors} from "./TestSeaWarriors.sol";
 
-// ========== ТЕСТЫ ДЛЯ getMetadataId С РАЗНЫМИ ЗНАЧЕНИЯМИ НУМЕРАТОРОВ ==========
 contract GetMetadataIdTest is Test {
     TestSeaWarriors public seaWarriors;
     address public owner;
 
-    // Настроим тестовую среду
     function setUp() public {
         owner = address(0x123);
         seaWarriors = new TestSeaWarriors(owner);
@@ -397,8 +395,7 @@ contract GetMetadataIdTest is Test {
             console.log("Distribution (100 calls):");
             for (uint256 i = 1; i <= 13; i++) {
                 if (counts[i] > 0) {
-                    //console.log("  MetadataId", i, ":", counts[i], "times");
-                      console.log("  MetadataId", i);
+                    console.log("  MetadataId", i, " : ", counts[i]);
                 }
             }
             console.log("---");

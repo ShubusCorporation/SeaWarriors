@@ -5,20 +5,16 @@ import {Test} from "forge-std/Test.sol";
 import {console} from "forge-std/console.sol";
 import {TestSeaWarriors} from "./TestSeaWarriors.sol";
 
-// ========== ОТДЕЛЬНЫЙ КОНТРАКТ ДЛЯ ТЕСТОВ getNumerator ==========
 contract GetNumeratorTest is Test {
     TestSeaWarriors public seaWarriors;
     address public owner;
     uint256 private constant MIN_NUMERATOR = 10;
     uint256 private constant MAX_NUMERATOR = 1000;
 
-    // Настроим тестовую среду
     function setUp() public {
         owner = address(0x123);
         seaWarriors = new TestSeaWarriors(owner);
     }
-
-    // ========== ТЕСТЫ ДЛЯ getNumerator ==========
 
     // Базовый тест: бонусный платеж (currentPayment > averagePayment)
     function testGetNumerator_BonusPayment() view public {
@@ -264,10 +260,9 @@ contract GetNumeratorTest is Test {
         assertGt(numerator, 90, "Numerator should increase after series of bonus payments");
     }
 
-    // Тест: граничное значение avg5p (averagePayment = 20)
     function testGetNumerator_Avg5pBoundary() public view {
         uint256 currentPayment = 0.002 ether;
-        uint256 averagePayment = 20; // avg5p = 1
+        uint256 averagePayment = 20;
         uint256 initialNumerator = 90;
         
         console.log("=== testGetNumerator_Avg5pBoundary ===");
@@ -275,15 +270,9 @@ contract GetNumeratorTest is Test {
         console.log("averagePayment:", averagePayment);
         console.log("initialNumerator:", initialNumerator);
         
-        uint256 result = seaWarriors.callGetNumerator(currentPayment, averagePayment, initialNumerator);
-        
+        uint256 result = seaWarriors.callGetNumerator(currentPayment, averagePayment, initialNumerator);      
         console.log("result numerator:", result);
         console.log("---");
-        
-        // avg5p = 20 / 20 = 1
-        // rem = 0.002 ether = 2000000000000000 wei
-        // rem >= avg5p, coeff = (2000000000000000 * 5) / 1 = очень большое число
-        // numerator будет ограничен MAX_NUMERATOR
         assertLe(result, 1000, "Numerator should be within bounds");
     }
 }
