@@ -471,6 +471,28 @@ contract SeaWarriorsTest is Test {
         assertTrue(seaWarriors.getHasItem(recipient, metadataId), "Recipient should have item after transfer");
     }
 
+    // Тест approve и transfer третьей стороной
+    function testApproveAllowsThirdPartyTransfer() public {
+        address operator = address(0xAAA);
+        address recipient = address(0xBBB);
+
+        vm.prank(user);
+        uint256 tokenId = seaWarriors.buy{value: 0.0001 ether}();
+        uint256 metadataId = seaWarriors.getMetadataOf(tokenId);
+
+        vm.prank(user);
+        seaWarriors.approve(operator, tokenId);
+        assertEq(seaWarriors.getApproved(tokenId), operator, "Approval should be set");
+
+        // Оператор переводит токен
+        vm.prank(operator);
+        seaWarriors.transferFrom(user, recipient, tokenId);
+
+        assertFalse(seaWarriors.getHasItem(user, metadataId), "User should not have item after operator transfer");
+        assertTrue(seaWarriors.getHasItem(recipient, metadataId), "Recipient should have item after operator transfer");
+        assertEq(seaWarriors.getApproved(tokenId), address(0), "Approval should be cleared after transfer");
+    }
+
     // Тест на burn и обновление _itemsPurchased
     function testBurnUpdatesItemsPurchased() public {
         // Покупаем несколько токенов
