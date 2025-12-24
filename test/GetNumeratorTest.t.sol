@@ -70,11 +70,11 @@ contract GetNumeratorTest is Test {
         console.log("result numerator:", result);
         console.log("---");
 
-        // rem = 0, rem < avg5p, должен вернуть исходный numerator
+        // должен вернуть исходный numerator
         assertEq(result, initialNumerator, "Numerator should remain unchanged when payment equals average");
     }
 
-    // Edge case: averagePayment = 0 (avg5p = 0)
+    // Edge case: averagePayment = 0
     function testGetNumerator_ZeroAveragePayment() public view {
         uint256 currentPayment = 0.001 ether;
         uint256 averagePayment = 0;
@@ -93,10 +93,10 @@ contract GetNumeratorTest is Test {
         assertEq(result, initialNumerator, "Numerator should remain unchanged when averagePayment is 0");
     }
 
-    // Edge case: averagePayment < 20 (avg5p = 0)
+    // Edge case: averagePayment < 20
     function testGetNumerator_SmallAveragePayment() public view {
         uint256 currentPayment = 0.001 ether;
-        uint256 averagePayment = 10; // меньше 20, avg5p = 0
+        uint256 averagePayment = 10;
         uint256 initialNumerator = 90;
 
         console.log("=== testGetNumerator_SmallAveragePayment ===");
@@ -260,12 +260,12 @@ contract GetNumeratorTest is Test {
         assertGt(numerator, 90, "Numerator should increase after series of bonus payments");
     }
 
-    function testGetNumerator_Avg5pBoundary() public view {
+    function testGetNumerator_MaxNumeratorBoundary() public view {
         uint256 currentPayment = 0.002 ether;
         uint256 averagePayment = 20;
         uint256 initialNumerator = 90;
 
-        console.log("=== testGetNumerator_Avg5pBoundary ===");
+        console.log("=== testGetNumerator_MaxNumeratorBoundary ===");
         console.log("currentPayment:", currentPayment);
         console.log("averagePayment:", averagePayment);
         console.log("initialNumerator:", initialNumerator);
@@ -273,6 +273,6 @@ contract GetNumeratorTest is Test {
         uint256 result = seaWarriors.callGetNumerator(currentPayment, averagePayment, initialNumerator);
         console.log("result numerator:", result);
         console.log("---");
-        assertLe(result, 1000, "Numerator should be within bounds");
+        assertLe(result, 1000, "Numerator should be max available");
     }
 }
