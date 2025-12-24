@@ -6,16 +6,16 @@ import {console} from "forge-std/console.sol";
 import {SeaWarriors} from "src/SeaWarriors.sol";
 
 contract SeaWarriorsScript is Script {
-  function setUp() public {}
+    function setUp() public {}
 
-  function run() public {
-    // TODO: Set addresses for the variables below, then uncomment the following section:
-    /*
-    vm.startBroadcast();
-    address initialOwner = <Set initialOwner address here>;
-    SeaWarriors instance = new SeaWarriors(initialOwner);
-    console.log("Contract deployed to %s", address(instance));
-    vm.stopBroadcast();
-    */
-  }
+    function run() public {
+        // TODO: Set addresses for the variables below, then uncomment the following section:
+        /*
+        vm.startBroadcast();
+        address initialOwner = <Set initialOwner address here>;
+        SeaWarriors instance = new SeaWarriors(initialOwner);
+        console.log("Contract deployed to %s", address(instance));
+        vm.stopBroadcast();
+        */
+    }
 }

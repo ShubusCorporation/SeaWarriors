@@ -14,7 +14,7 @@ pragma solidity 0.8.30;
       curr = Math.floor(curr * coeff);
       arr[i] = curr;
       summ += curr;
-      
+
     }
 
     for (let i = 0; i < max; i++) {
@@ -41,12 +41,12 @@ contract SeaWarriorsTest is Test {
     function setUp() public {
         owner = address(0x123);
         user = address(0x456);
-        
+
         seaWarriors = new TestSeaWarriors(owner);
 
         // Инициализация баланса для пользователя
         initialBalance = 10 ether;
-        vm.deal(user, initialBalance);  // даем пользователю начальный баланс
+        vm.deal(user, initialBalance); // даем пользователю начальный баланс
         vm.deal(owner, initialBalance);
     }
 
@@ -54,7 +54,7 @@ contract SeaWarriorsTest is Test {
     function testMetadataIdChangeOnPayment() public {
         uint256 payment1 = 0.0005 ether;
         uint256 payment2 = 0.001 ether;
-        
+
         // Покупаем первый токен
         vm.prank(user);
         uint256 tokenId1 = seaWarriors.buy{value: payment1}();
@@ -115,7 +115,7 @@ contract SeaWarriorsTest is Test {
     function testLoad() public {
         uint256 numberOfPurchases = 100;
         uint256 remainedPictures = seaWarriors.TOTAL_PICTURES();
-        
+
         for (uint256 i = 0; i < numberOfPurchases; i++) {
             uint256 payment = 0.0001 ether + i * 0.0001 ether;
 
@@ -137,10 +137,10 @@ contract SeaWarriorsTest is Test {
                 bytes4 alreadyOwnsSelector = bytes4(keccak256("AlreadyOwns(address,uint256)"));
                 bytes4 insufficientFundsSelector = bytes4(keccak256("InsufficientFundsToBuyNew(address,uint256)"));
                 bytes4 alreadyCompletedSelector = bytes4(keccak256("AlreadyCompleted(address)"));
-                
+
                 // forge-lint: disable-next-line(unsafe-typecast):
                 bytes4 errorSelector = bytes4(reason);
-                
+
                 if (reason.length >= 68 && errorSelector == alreadyOwnsSelector) {
                     // AlreadyOwns(address buyer, uint256 metadataId)
                     // Структура: 4 байта селектор + 32 байта address + 32 байта uint256
@@ -220,7 +220,7 @@ contract SeaWarriorsTest is Test {
         uint256 initialOwnerBalance = address(owner).balance;
         // Сначала пополняем баланс контракта
         uint256 userPayment = 0.0035 ether;
-        
+
         vm.prank(user);
         seaWarriors.buy{value: userPayment}();
 
@@ -233,7 +233,9 @@ contract SeaWarriorsTest is Test {
 
         console.log("Owner's balance after withdraw: ", address(owner).balance);
         // Проверяем, что баланс владельца увеличился
-        assertEq(address(owner).balance - initialOwnerBalance, userPayment, "Owner's balance should increase after withdraw");       
+        assertEq(
+            address(owner).balance - initialOwnerBalance, userPayment, "Owner's balance should increase after withdraw"
+        );
         // Проверяем, что баланс контракта стал нулевым (или почти нулевым)
         assertEq(address(seaWarriors).balance, 0, "Contract balance should be zero after withdraw");
     }
@@ -242,7 +244,7 @@ contract SeaWarriorsTest is Test {
     function testArtistShouldBeEOA() public {
         // Создаем простой контракт для теста
         MockContract mockContract = new MockContract();
-        
+
         // Попытка установить контракт как художника должна вернуть ошибку
         vm.prank(owner);
         vm.expectRevert(abi.encodeWithSelector(SeaWarriors.ArtistShouldBeEOA.selector));
@@ -252,10 +254,10 @@ contract SeaWarriorsTest is Test {
     // Тест на успешную установку EOA как художника
     function testSetArtistEOA() public {
         address artist = address(0x789);
-        
+
         vm.prank(owner);
         seaWarriors.setArtist(artist);
-        
+
         assertEq(seaWarriors._artist(), artist, "Artist should be set correctly");
     }
 
@@ -277,24 +279,27 @@ contract SeaWarriorsTest is Test {
             assertLt(iterations, 101, "Can not complete the whole collection!");
             vm.prank(user);
             try seaWarriors.buy{value: val}() {
-                // Покупка успешна
-            } catch (bytes memory reason) {
+            // Покупка успешна
+            }
+            catch (bytes memory reason) {
                 // Селектор ошибки InsufficientFundsToBuyNew
                 bytes4 insufficientFundsSelector = bytes4(keccak256("InsufficientFundsToBuyNew(address,uint256)"));
-                
+
                 // forge-lint: disable-next-line(unsafe-typecast):
                 bytes4 errorSelector = bytes4(reason);
-                
+
                 if (reason.length >= 68 && errorSelector == insufficientFundsSelector) {
-                     val *= 2;
+                    val *= 2;
                 } else {
                     revert(string(reason));
                 }
             }
         }
 
-        assertEq(seaWarriors.getItemsPurchased(user), seaWarriors.TOTAL_PICTURES(), "The collection should be completed");
-        
+        assertEq(
+            seaWarriors.getItemsPurchased(user), seaWarriors.TOTAL_PICTURES(), "The collection should be completed"
+        );
+
         // Попытка купить еще одну должна вернуть ошибку AlreadyCompleted
         vm.prank(user);
         vm.expectRevert(abi.encodeWithSelector(SeaWarriors.AlreadyCompleted.selector, user));
@@ -305,30 +310,32 @@ contract SeaWarriorsTest is Test {
     function testAfterBurnCanBuyAgain() public {
         uint256[] memory tokenIds = new uint256[](seaWarriors.TOTAL_PICTURES());
         uint256 val = 0.1 ether;
-        
+
         // Покупаем все картины
         for (uint256 i = 0; i < seaWarriors.TOTAL_PICTURES(); i++) {
             vm.prank(owner);
             tokenIds[i] = seaWarriors.safeMint(owner, i + 1);
         }
-        assertEq(seaWarriors.getItemsPurchased(owner), seaWarriors.TOTAL_PICTURES(), "The collection should be completed");
+        assertEq(
+            seaWarriors.getItemsPurchased(owner), seaWarriors.TOTAL_PICTURES(), "The collection should be completed"
+        );
 
         // Проверяем, что покупка 14-й картинки невозможна
         vm.prank(owner);
         vm.expectRevert(abi.encodeWithSelector(SeaWarriors.AlreadyCompleted.selector, owner));
         seaWarriors.buy{value: val}();
-        
+
         // Сжигаем один токен
         vm.prank(owner);
         seaWarriors.burn(tokenIds[0]);
 
         assertEq(seaWarriors.getItemsPurchased(owner), 12, "1 token should be burned");
-         
+
         // Теперь должна быть возможность купить снова
         vm.prank(owner);
         uint256 newTokenId = seaWarriors.buy{value: 0.0001 ether}();
         assertGt(newTokenId, 0, "Should be able to buy after burn");
-        
+
         // Проверяем, что _hasItem обновился после burn
         uint256 burnedMetadataId = seaWarriors.getMetadataOf(tokenIds[0]);
         assertFalse(seaWarriors.getHasItem(owner, burnedMetadataId), "Should not have item after burn");
@@ -357,14 +364,13 @@ contract SeaWarriorsTest is Test {
         vm.stopPrank();
     }
 
-
     // Тест на ошибку AlreadyOwns при safeMint
     function testAlreadyOwnsSafeMint() public {
         uint256 metadataId = 5;
-        
+
         vm.prank(owner);
         seaWarriors.safeMint(user, metadataId);
-        
+
         // Попытка сминтить тот же metadataId должна вернуть ошибку
         vm.prank(owner);
         vm.expectRevert(abi.encodeWithSelector(SeaWarriors.AlreadyOwns.selector, user, metadataId));
@@ -380,14 +386,14 @@ contract SeaWarriorsTest is Test {
         vm.prank(user);
         uint256 tokenId = seaWarriors.buy{value: 5 ether}(); // Average value to
         uint256 metadataId = seaWarriors.getMetadataOf(tokenId);
-        
+
         // Сначала сминтим все возможные metadataId пользователю
         for (uint256 i = 1; i <= seaWarriors.TOTAL_PICTURES() - 2; i++) {
             if (i == metadataId) continue;
             vm.prank(owner);
             seaWarriors.safeMint(user, i);
         }
-        
+
         // Теперь попытка купить должна вернуть InsufficientFundsToBuyNew
         vm.prank(user);
         vm.expectRevert(abi.encodeWithSelector(SeaWarriors.InsufficientFundsToBuyNew.selector, user, 0.0001 ether));
@@ -406,20 +412,20 @@ contract SeaWarriorsTest is Test {
     function testWithdrawWithArtist() public {
         address artist = address(0x789);
         vm.deal(artist, 0);
-        
+
         vm.prank(owner);
         seaWarriors.setArtist(artist);
-        
+
         uint256 payment = 1 ether;
         vm.prank(user);
         seaWarriors.buy{value: payment}();
-        
+
         uint256 initialOwnerBalance = address(owner).balance;
         uint256 initialArtistBalance = address(artist).balance;
-        
+
         vm.prank(owner);
         seaWarriors.withdraw();
-        
+
         // Проверяем, что владелец и художник получили по половине
         assertEq(address(owner).balance - initialOwnerBalance, payment / 2, "Owner should receive half");
         assertEq(address(artist).balance - initialArtistBalance, payment / 2, "Artist should receive half");
@@ -429,15 +435,15 @@ contract SeaWarriorsTest is Test {
     function testPauseUnpause() public {
         vm.prank(owner);
         seaWarriors.pause();
-        
+
         // Покупка должна быть невозможна когда контракт на паузе
         vm.prank(user);
         vm.expectRevert();
         seaWarriors.buy{value: 0.0001 ether}();
-        
+
         vm.prank(owner);
         seaWarriors.unpause();
-        
+
         // После unpause покупка должна работать
         vm.prank(user);
         uint256 tokenId = seaWarriors.buy{value: 0.0001 ether}();
@@ -447,19 +453,19 @@ contract SeaWarriorsTest is Test {
     // Тест на transfer и обновление _hasItem
     function testTransferUpdatesHasItem() public {
         address recipient = address(0x999);
-        
+
         vm.prank(user);
         uint256 tokenId = seaWarriors.buy{value: 0.0001 ether}();
         uint256 metadataId = seaWarriors.getMetadataOf(tokenId);
-        
+
         // Проверяем, что у user есть этот item
         assertTrue(seaWarriors.getHasItem(user, metadataId), "User should have item");
         assertFalse(seaWarriors.getHasItem(recipient, metadataId), "Recipient should not have item");
-        
+
         // Переводим токен
         vm.prank(user);
         seaWarriors.transferFrom(user, recipient, tokenId);
-        
+
         // Проверяем, что _hasItem обновился
         assertFalse(seaWarriors.getHasItem(user, metadataId), "User should not have item after transfer");
         assertTrue(seaWarriors.getHasItem(recipient, metadataId), "Recipient should have item after transfer");
@@ -470,14 +476,14 @@ contract SeaWarriorsTest is Test {
         // Покупаем несколько токенов
         vm.prank(user);
         uint256 tokenId1 = seaWarriors.buy{value: 0.0001 ether}();
-        
+
         vm.prank(user);
         seaWarriors.buy{value: 0.0001 ether}();
-        
+
         // Сжигаем один токен
         vm.prank(user);
         seaWarriors.burn(tokenId1);
-        
+
         // Теперь можно купить еще один (было 2, стало 1, можно купить до TOTAL_PICTURES)
         vm.prank(user);
         uint256 tokenId3 = seaWarriors.buy{value: 0.0001 ether}();

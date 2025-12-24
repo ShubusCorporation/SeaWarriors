@@ -44,13 +44,8 @@ contract SeaWarriors is ERC721, ERC721URIStorage, ERC721Pausable, Ownable, ERC72
     mapping(uint256 => uint256) internal _metadataOf; // tokenId -> metadataId
     mapping(address => uint256) internal _itemsPurchased; // buyer -> how many items
 
-    constructor(address initialOwner)
-        ERC721("Sea Warriors", "ABYSSWARS")
-        Ownable(initialOwner)
-    {
-        _seed = uint256(keccak256(
-            abi.encodePacked(blockhash(block.number - 1), block.timestamp)
-        ));
+    constructor(address initialOwner) ERC721("Sea Warriors", "ABYSSWARS") Ownable(initialOwner) {
+        _seed = uint256(keccak256(abi.encodePacked(blockhash(block.number - 1), block.timestamp)));
     }
 
     // forge-lint: disable-next-line(mixed-case-function):
@@ -66,11 +61,7 @@ contract SeaWarriors is ERC721, ERC721URIStorage, ERC721Pausable, Ownable, ERC72
         _unpause();
     }
 
-    function safeMint(address to, uint256 metadataId)
-        public
-        onlyOwner
-        returns (uint256)
-    {
+    function safeMint(address to, uint256 metadataId) public onlyOwner returns (uint256) {
         require(!_hasItem[to][metadataId], AlreadyOwns(to, metadataId));
         require(metadataId > 0 && metadataId <= TOTAL_PICTURES, WrongMetadataId(metadataId));
 
@@ -88,13 +79,7 @@ contract SeaWarriors is ERC721, ERC721URIStorage, ERC721Pausable, Ownable, ERC72
         _artist = artist;
     }
 
-    function buy() 
-        public
-        payable
-        whenNotPaused
-        nonReentrant
-        returns(uint256)
-    {
+    function buy() public payable whenNotPaused nonReentrant returns (uint256) {
         require(_itemsPurchased[msg.sender] < TOTAL_PICTURES, AlreadyCompleted(msg.sender));
         require(msg.value >= 0.0001 ether, InsufficientFunds());
         uint256 tokenId = _nextTokenId++;
@@ -119,35 +104,29 @@ contract SeaWarriors is ERC721, ERC721URIStorage, ERC721Pausable, Ownable, ERC72
         _setTokenURI(tokenId, metadataId.toString());
 
         if (_totalSales % 5 == 0) {
-            _seed = uint256(keccak256(
-                abi.encodePacked(_seed, blockhash(block.number - 1))
-            ));
+            _seed = uint256(keccak256(abi.encodePacked(_seed, blockhash(block.number - 1))));
         }
         return tokenId;
     }
 
     // With array cash:
-    // transaction cost    101996 gas 
+    // transaction cost    101996 gas
     // execution cost      80932 gas
 
     // Without array:
-    // transaction cost	101237 gas 
-    // execution cost	80173 gas 
+    // transaction cost	101237 gas
+    // execution cost	80173 gas
 
-    function getMetadataId(
-        uint256 currentPayment,
-        uint256 totalPayments,
-        uint256 totalSales
-    ) 
-    internal
-    view
-    returns(uint256) 
+    function getMetadataId(uint256 currentPayment, uint256 totalPayments, uint256 totalSales)
+        internal
+        view
+        returns (uint256)
     {
         uint256 numerator = INITIAL_NUMERATOR;
         uint256 denominator = 100;
 
         if (totalSales > 0) {
-            numerator = getNumerator(currentPayment,  totalPayments / totalSales, numerator);
+            numerator = getNumerator(currentPayment, totalPayments / totalSales, numerator);
         }
         console.log("== Implementation ==");
         console.log("numerator = ", numerator);
@@ -156,7 +135,7 @@ contract SeaWarriors is ERC721, ERC721URIStorage, ERC721Pausable, Ownable, ERC72
         uint256 curr = initial;
         uint256 summ;
 
-        for(uint256 i = 0; i < TOTAL_PICTURES; i++) {
+        for (uint256 i = 0; i < TOTAL_PICTURES; i++) {
             unchecked {
                 curr = curr * numerator / denominator;
                 summ += curr;
@@ -170,7 +149,7 @@ contract SeaWarriors is ERC721, ERC721URIStorage, ERC721Pausable, Ownable, ERC72
         curr = initial;
         summ = 0;
 
-        for(uint256 i = 0; i < TOTAL_PICTURES; i++) {
+        for (uint256 i = 0; i < TOTAL_PICTURES; i++) {
             unchecked {
                 curr = curr * numerator / denominator;
                 summ += curr;
@@ -182,14 +161,11 @@ contract SeaWarriors is ERC721, ERC721URIStorage, ERC721Pausable, Ownable, ERC72
         return 1;
     }
 
-    function getNumerator(
-        uint256 currentPayment,
-        uint256 averagePayment,
-        uint256 numerator
-    ) internal 
-      view
-      virtual
-      returns(uint256)
+    function getNumerator(uint256 currentPayment, uint256 averagePayment, uint256 numerator)
+        internal
+        view
+        virtual
+        returns (uint256)
     {
         if (currentPayment == 0) {
             return MIN_NUMERATOR;
@@ -209,12 +185,12 @@ contract SeaWarriors is ERC721, ERC721URIStorage, ERC721Pausable, Ownable, ERC72
             uint256 coeff = 100 / rawCoeff;
 
             if (coeff == 1) numerator += (100 - rawCoeff);
-               else numerator *= coeff;
-            
-            if (numerator > MAX_NUMERATOR) 
+            else numerator *= coeff;
+
+            if (numerator > MAX_NUMERATOR) {
                 numerator = MAX_NUMERATOR;
-        }
-        else {
+            }
+        } else {
             rawCoeff = currentPayment * 100 / averagePayment;
 
             if (rawCoeff == 0) {
@@ -223,7 +199,7 @@ contract SeaWarriors is ERC721, ERC721URIStorage, ERC721Pausable, Ownable, ERC72
             uint256 coeff = 100 - rawCoeff;
 
             if (numerator > coeff) numerator -= coeff;
-                else numerator = MIN_NUMERATOR;
+            else numerator = MIN_NUMERATOR;
         }
         return numerator;
     }
@@ -250,13 +226,12 @@ contract SeaWarriors is ERC721, ERC721URIStorage, ERC721Pausable, Ownable, ERC72
 
         if (_artist == address(0)) {
             (successOwner,) = ownerAddr.call{value: balance}("");
-        }
-        else {
+        } else {
             unchecked {
                 balance /= 2;
             }
             (successOwner,) = ownerAddr.call{value: balance}("");
-            (bool successArtist, ) = _artist.call{value: balance}("");
+            (bool successArtist,) = _artist.call{value: balance}("");
             require(successArtist, WithdrawToArtistFailed(_artist, balance));
         }
         require(successOwner, WithdrawFailed(balance));
@@ -264,10 +239,7 @@ contract SeaWarriors is ERC721, ERC721URIStorage, ERC721Pausable, Ownable, ERC72
 
     // The following functions are overrides required by Solidity.
     // forge-lint: disable-next-line(mixed-case-function):
-    function _setTokenURI(uint256 tokenId, string memory metadataId) 
-        internal 
-        override(ERC721URIStorage) 
-    {
+    function _setTokenURI(uint256 tokenId, string memory metadataId) internal override(ERC721URIStorage) {
         metadataId = string.concat(metadataId, ".json");
         super._setTokenURI(tokenId, metadataId);
     }
@@ -280,34 +252,26 @@ contract SeaWarriors is ERC721, ERC721URIStorage, ERC721Pausable, Ownable, ERC72
         from = super._update(to, tokenId, auth);
         uint256 metadataId = _metadataOf[tokenId];
 
-        if (from != address(0)) { // !mint || transfer || burn
+        if (from != address(0)) {
+            // !mint || transfer || burn
             _hasItem[from][metadataId] = false;
         }
-        if (to != address(0)) { // transfer || mint
+        if (to != address(0)) {
+            // transfer || mint
             _hasItem[to][metadataId] = true;
             _itemsPurchased[to]++;
-        }
-        else { // burn
+        } else {
+            // burn
             delete _metadataOf[tokenId];
             _itemsPurchased[from]--;
         }
     }
 
-    function tokenURI(uint256 tokenId)
-        public
-        view
-        override(ERC721, ERC721URIStorage)
-        returns (string memory)
-    {
+    function tokenURI(uint256 tokenId) public view override(ERC721, ERC721URIStorage) returns (string memory) {
         return super.tokenURI(tokenId);
     }
 
-    function supportsInterface(bytes4 interfaceId)
-        public
-        view
-        override(ERC721, ERC721URIStorage)
-        returns (bool)
-    {
+    function supportsInterface(bytes4 interfaceId) public view override(ERC721, ERC721URIStorage) returns (bool) {
         return super.supportsInterface(interfaceId);
     }
 }
@@ -327,11 +291,11 @@ contract TestSeaWarriors is SeaWarriors {
         return _itemsPurchased[by];
     }
 
-    function callGetNumerator(
-        uint256 currentPayment,
-        uint256 averagePayment,
-        uint256 numerator
-    ) public view returns (uint256) {
+    function callGetNumerator(uint256 currentPayment, uint256 averagePayment, uint256 numerator)
+        public
+        view
+        returns (uint256)
+    {
         return super.getNumerator(currentPayment, averagePayment, numerator);
     }
 }

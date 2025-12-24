@@ -12,23 +12,20 @@ contract TestMockedSeaWarriors is TestSeaWarriors {
         _getNumeratorResult = value;
     }
 
-    function getNumerator(
-        uint256 currentPayment,
-        uint256 averagePayment,
-        uint256 numerator
-    ) internal view override returns (uint256) {
+    function getNumerator(uint256 currentPayment, uint256 averagePayment, uint256 numerator)
+        internal
+        view
+        override
+        returns (uint256)
+    {
         return _getNumeratorResult;
     }
 
-    function callGetMetadataId(
-        uint256 currentPayment,
-        uint256 totalPayments,
-        uint256 totalSales
-    ) 
-    public
-    view
-    returns(uint256) 
+    function callGetMetadataId(uint256 currentPayment, uint256 totalPayments, uint256 totalSales)
+        public
+        view
+        returns (uint256)
     {
-       return super.getMetadataId(currentPayment, totalPayments, totalSales);
+        return super.getMetadataId(currentPayment, totalPayments, totalSales);
     }
 }
