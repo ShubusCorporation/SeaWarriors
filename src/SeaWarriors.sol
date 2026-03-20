@@ -84,7 +84,7 @@ contract SeaWarriors is ERC721, ERC721URIStorage, ERC721Pausable, Ownable, ERC72
         require(msg.value >= 0.0001 ether, InsufficientFunds());
         uint256 tokenId = _nextTokenId++;
         uint256 metadataId = getMetadataId(msg.value, _totalPayments, _totalSales);
-        console.log("original metadataId = ", metadataId);
+        //console.log("original metadataId = ", metadataId);
         require(metadataId > 0 && metadataId <= TOTAL_PICTURES, WrongMetadataId(metadataId));
 
         while (_hasItem[msg.sender][metadataId]) {
@@ -92,7 +92,7 @@ contract SeaWarriors is ERC721, ERC721URIStorage, ERC721Pausable, Ownable, ERC72
                 revert InsufficientFundsToBuyNew(msg.sender, msg.value);
             }
         }
-        console.log("Applied metadataId = ", metadataId);
+        //console.log("Applied metadataId = ", metadataId);
         unchecked {
             _totalPayments += msg.value;
             _totalSales++;
@@ -128,8 +128,8 @@ contract SeaWarriors is ERC721, ERC721URIStorage, ERC721Pausable, Ownable, ERC72
         if (totalSales > 0) {
             numerator = getNumerator(currentPayment, totalPayments / totalSales, numerator);
         }
-        console.log("== Implementation ==");
-        console.log("numerator = ", numerator);
+        //console.log("== Implementation ==");
+        //console.log("numerator = ", numerator);
 
         uint256 initial = 1250;
         uint256 curr = initial;
@@ -139,12 +139,12 @@ contract SeaWarriors is ERC721, ERC721URIStorage, ERC721Pausable, Ownable, ERC72
             unchecked {
                 curr = curr * numerator / denominator;
                 summ += curr;
-                console.log(i + 1, "): ", curr);
+                //console.log(i + 1, "): ", curr);
             }
         }
         uint256 random = getRandom(summ);
-        console.log("random: ", random, " summ: ", summ);
-        console.log("====");
+        //console.log("random: ", random, " summ: ", summ);
+        //console.log("====");
 
         curr = initial;
         summ = 0;

@@ -1,6 +1,5 @@
 # Compiler files
 cache/
-out/
 
 # Ignores development broadcast logs
 !/broadcast
@@ -17,9 +16,13 @@ docs/
 foundry.lock
 npm/
 artifacts/
+
 # symlink for Slither
 out/
 out
+
+deps/npm
 .states/
 lib/forge-std
 lib/openzeppelin-contracts
+
