@@ -50,6 +50,9 @@ contract SeaWarriors is ERC721, ERC721URIStorage, ERC721Pausable, Ownable, ERC72
 
     // forge-lint: disable-next-line(mixed-case-function):
     function _baseURI() internal pure override returns (string memory) {
+        // Base URI for token metadata; ERC721 tokenURI() appends tokenId automatically.
+        // Example: _baseURI() = "ipfs://…/", tokenURI(1) -> "ipfs://…/1"
+        // Enables storing JSON metadata files per token on IPFS.
         return "ipfs://Qmf2UPHvAqCXk2kMgPquSacNQWdckpHRGKRikevdbK6SG9/";
     }
 
